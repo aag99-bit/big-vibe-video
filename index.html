@@ -1,11 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Todo List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Hello World</h1>
+<body class="bg-gray-100 min-h-screen py-10">
+    <div class="max-w-lg mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">📝 Todo List</h1>
+        
+        <!-- Форма добавления -->
+        <form id="todoForm" class="flex gap-2 mb-6">
+            <input 
+                type="text" 
+                id="todoInput" 
+                placeholder="Новая задача..." 
+                class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autocomplete="off"
+            >
+            <button 
+                type="submit" 
+                class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
+            >
+                Добавить
+            </button>
+        </form>
+        
+        <!-- Список задач -->
+        <ul id="todoList" class="space-y-3"></ul>
+        
+        <!-- Пустое состояние -->
+        <p id="emptyState" class="text-center text-gray-400 mt-8 hidden">Нет задач. Добавьте первую!</p>
+    </div>
+
+    <script>
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+
+        const form = document.getElementById('todoForm');
+        const input = document.getElementById('todoInput');
+        const list = document.getElementById('todoList');
+        const emptyState = document.getElementById('emptyState');
+
+        function save() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function render() {
+            list.innerHTML = '';
+            emptyState.classList.toggle('hidden', todos.length > 0);
+
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm';
+                
+                li.innerHTML = `
+                    <input 
+                        type="checkbox" 
+                        ${todo.done ? 'checked' : ''} 
+                        class="w-5 h-5 rounded accent-green-500 cursor-pointer"
+                        onchange="toggle(${index})"
+                    >
+                    <span class="flex-1 ${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}">
+                        ${escapeHtml(todo.text)}
+                    </span>
+                    <button 
+                        onclick="remove(${index})"
+                        class="text-red-400 hover:text-red-600 transition text-lg"
+                        title="Удалить"
+                    >
+                        ✕
+                    </button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function add(text) {
+            todos.unshift({ text: text.trim(), done: false });
+            save();
+            render();
+        }
+
+        function toggle(index) {
+            todos[index].done = !todos[index].done;
+            save();
+            render();
+        }
+
+        function remove(index) {
+            todos.splice(index, 1);
+            save();
+            render();
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (text) {
+                add(text);
+                input.value = '';
+                input.focus();
+            }
+        });
+
+        render();
+    </script>
 </body>
 </html>
