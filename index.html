@@ -26,6 +26,22 @@
                 Добавить
             </button>
         </form>
+
+        <!-- Фильтры и управление -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6 text-sm">
+            <div id="filters" class="flex gap-2">
+                <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1 rounded-full transition bg-blue-100 text-blue-600 font-medium">Все</button>
+                <button onclick="setFilter('active')" id="filter-active" class="px-3 py-1 rounded-full transition text-gray-600 hover:bg-gray-200">Активные</button>
+                <button onclick="setFilter('completed')" id="filter-completed" class="px-3 py-1 rounded-full transition text-gray-600 hover:bg-gray-200">Готово</button>
+            </div>
+            <button 
+                onclick="clearCompleted()" 
+                id="clearCompletedBtn"
+                class="text-red-500 hover:text-red-700 transition font-medium hidden"
+            >
+                Очистить выполненные
+            </button>
+        </div>
         
         <!-- Список задач -->
         <ul id="todoList" class="space-y-3"></ul>
@@ -36,11 +52,13 @@
 
     <script>
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';
 
         const form = document.getElementById('todoForm');
         const input = document.getElementById('todoInput');
         const list = document.getElementById('todoList');
         const emptyState = document.getElementById('emptyState');
+        const clearBtn = document.getElementById('clearCompletedBtn');
 
         function save() {
             localStorage.setItem('todos', JSON.stringify(todos));
@@ -48,9 +66,18 @@
 
         function render() {
             list.innerHTML = '';
-            emptyState.classList.toggle('hidden', todos.length > 0);
+            
+            const filteredTodos = todos.filter(todo => {
+                if (currentFilter === 'active') return !todo.done;
+                if (currentFilter === 'completed') return todo.done;
+                return true;
+            });
 
-            todos.forEach((todo, index) => {
+            emptyState.classList.toggle('hidden', filteredTodos.length > 0);
+            clearBtn.classList.toggle('hidden', !todos.some(t => t.done));
+
+            filteredTodos.forEach((todo) => {
+                const originalIndex = todos.indexOf(todo);
                 const li = document.createElement('li');
                 li.className = 'flex items-center gap-3 bg-white p-4 rounded-lg shadow-sm';
                 
@@ -59,13 +86,13 @@
                         type="checkbox" 
                         ${todo.done ? 'checked' : ''} 
                         class="w-5 h-5 rounded accent-green-500 cursor-pointer"
-                        onchange="toggle(${index})"
+                        onchange="toggle(${originalIndex})"
                     >
                     <span class="flex-1 ${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}">
                         ${escapeHtml(todo.text)}
                     </span>
                     <button 
-                        onclick="remove(${index})"
+                        onclick="remove(${originalIndex})"
                         class="text-red-400 hover:text-red-600 transition text-lg"
                         title="Удалить"
                     >
@@ -96,6 +123,28 @@
 
         function remove(index) {
             todos.splice(index, 1);
+            save();
+            render();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Обновляем стили кнопок
+            ['all', 'active', 'completed'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = 'px-3 py-1 rounded-full transition bg-blue-100 text-blue-600 font-medium';
+                } else {
+                    btn.className = 'px-3 py-1 rounded-full transition text-gray-600 hover:bg-gray-200';
+                }
+            });
+            
+            render();
+        }
+
+        function clearCompleted() {
+            todos = todos.filter(todo => !todo.done);
             save();
             render();
         }
