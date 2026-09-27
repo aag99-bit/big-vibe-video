@@ -1,0 +1,16 @@
+{
+  "name": "big-vibe-video",
+  "version": "1.0.0",
+  "description": "Todo list — single-file Vue 3 + TailwindCSS app served by a zero-dependency Node static server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "todo",
+    "vue",
+    "tailwindcss"
+  ],
+  "license": "MIT"
+}

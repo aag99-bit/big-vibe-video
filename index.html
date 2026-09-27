@@ -88,6 +88,12 @@
                     return todos.value;
                 });
 
+                // Обновление заголовка вкладки при изменении отфильтрованного списка
+                watch(filteredTodos, (newVal) => {
+                    const count = newVal.length;
+                    document.title = count > 0 ? `(${count}) Todo List` : 'Todo List';
+                }, { immediate: true });
+
                 const hasCompleted = computed(() => todos.value.some(t => t.done));
 
                 // Методы
