@@ -22,6 +22,13 @@ const filteredTodos = computed(() => {
 })
 
 const hasCompleted = computed(() => todos.value.some(t => t.done))
+const counterText = computed(() => {
+  const total = todos.value.length
+  const active = todos.value.filter(t => !t.done).length
+  const completed = todos.value.filter(t => t.done).length
+  return `Всего ${total} · Активно ${active} · Выполнено ${completed}`
+})
+
 
 // Счётчик задач в заголовке вкладки (фича от pi.dev)
 watch(filteredTodos, (newVal) => {
@@ -65,7 +72,7 @@ function filterClass(filter) {
 <template>
   <div class="max-w-lg mx-auto px-4">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">📝 Todo List</h1>
-
+   <p class="text-center text-gray-500 mb-6">{{ counterText }} 🎯</p>
     <form @submit.prevent="addTodo" class="flex gap-2 mb-6">
       <input
         v-model="newTodoText"
