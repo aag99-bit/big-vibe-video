@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: big-vibe-video
+    restart: always
+    environment:
+      - VIRTUAL_HOST=bigvibetest.hopto.org
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=bigvibetest.hopto.org
+      - LETSENCRYPT_EMAIL=aag99@yandex.ru
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true
