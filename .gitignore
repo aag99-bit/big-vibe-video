@@ -10,3 +10,5 @@ apps/backend/data/
 *.db-journal
 *.db-wal
 *.db-shm
+# Frontend build output
+apps/frontend/dist/

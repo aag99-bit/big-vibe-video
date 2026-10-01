@@ -1,14 +1,33 @@
-# Stage 1: Build
-FROM node:20-alpine as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
+# Stage 1: сборка фронтенда
+FROM node:20-alpine AS frontend-build
+WORKDIR /build
+COPY apps/frontend/package*.json ./
+RUN npm ci
+COPY apps/frontend/ ./
 RUN npm run build
 
-# Stage 2: Production
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Stage 2: production-зависимости бэкенда (без devDeps)
+FROM node:20-alpine AS backend-deps
+WORKDIR /build
+COPY apps/backend/package*.json ./
+RUN npm ci --omit=dev
+
+# Stage 3: финальный образ — node + nginx
+FROM node:20-alpine
+RUN apk add --no-cache nginx
+WORKDIR /app
+
+# Бэкенд с production-зависимостями
+COPY --from=backend-deps /build/node_modules ./apps/backend/node_modules
+COPY apps/backend/ ./apps/backend/
+
+# Собранный фронтенд
+COPY --from=frontend-build /build/dist ./apps/frontend/dist
+
+# Конфиг nginx и точка входа
+COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 3000
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -63,7 +63,7 @@ app.delete('/api/todos/:id', (req, res) => {
 });
 
 init().then(() => {
-  app.listen(PORT, () => console.log(`Backend listening on http://localhost:${PORT}`));
+  app.listen(PORT, '0.0.0.0', () => console.log(`Backend listening on http://0.0.0.0:${PORT}`));
 }).catch((err) => {
   console.error('Failed to start:', err);
   process.exit(1);
