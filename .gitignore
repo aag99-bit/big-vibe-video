@@ -4,3 +4,9 @@ index.legacy*
 .mcp.json
 .pi/
 project.tar.gz
+# SQLite local data
+apps/backend/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
