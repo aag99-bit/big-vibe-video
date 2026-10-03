@@ -1,9 +1,10 @@
 const API = '/api/todos';
 
-export async function fetchTodos() {
-  const res = await fetch(API);
-  if (!res.ok) throw new Error('Failed to fetch todos');
-  return res.json();
+export async function fetchTodos(filter = 'all') {
+  const url = filter === 'all' ? API : `${API}?filter=${filter}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch todos')
+  return res.json()
 }
 
 export async function createTodo(text) {

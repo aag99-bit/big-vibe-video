@@ -29,7 +29,18 @@ function get(sql, params = []) {
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.get('/api/todos', (req, res) => {
-  const rows = all('SELECT * FROM todos ORDER BY id ASC');
+  const filter = req.query.filter || 'all';
+  let sql = 'SELECT * FROM todos';
+  
+  if (filter === 'active') {
+    sql += ' WHERE done = 0';
+  } else if (filter === 'done') {
+    sql += ' WHERE done = 1';
+  }
+  
+  sql += ' ORDER BY id ASC';
+  
+  const rows = all(sql);
   res.json(rows.map(toApi));
 });
 
