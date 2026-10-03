@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { fetchTodos, createTodo, updateTodo, deleteTodo } from '../api.js'
 
 const todos = ref([])
 const newTodo = ref('')
 const currentFilter = ref('all')
+const editingId = ref(null)
+const editText = ref('')
 
 // Счетчики
 const totalTodos = ref(0)
@@ -57,6 +59,41 @@ async function remove(todo) {
   await deleteTodo(todo.id)
   todos.value = todos.value.filter(t => t.id !== todo.id)
   loadStats() 
+}
+
+function startEdit(todo) {
+  editingId.value = todo.id
+  editText.value = todo.text
+  
+  nextTick(() => {
+    const input = document.querySelector('input.flex-1.px-2.py-1.border.border-blue-500')
+    if (input) input.focus()
+  })
+}
+
+async function saveEdit(todo) {
+  if (editingId.value === null) return
+  const trimmedText = editText.value.trim()
+  
+  if (trimmedText && trimmedText !== todo.text) {
+    try {
+      const updated = await updateTodo(todo.id, { text: trimmedText })
+      const idx = todos.value.findIndex(t => t.id === todo.id)
+      if (idx !== -1) {
+        todos.value[idx] = updated
+      }
+    } catch (e) {
+      console.error('Save edit error:', e)
+    }
+  }
+  
+  editingId.value = null
+  editText.value = ''
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editText.value = ''
 }
 
 // Переключение фильтра
@@ -150,9 +187,23 @@ onMounted(() => {
           @change="toggle(todo)"
           class="w-5 h-5"
         />
-        <span :class="{ 'line-through text-gray-500': todo.done }" class="flex-1">
+        <span 
+          v-if="editingId !== todo.id"
+          :class="{ 'line-through text-gray-500': todo.done }" 
+          class="flex-1 cursor-pointer"
+          @dblclick="startEdit(todo)"
+        >
           {{ todo.text }}
         </span>
+        <input
+          v-else
+          v-model="editText"
+          class="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none"
+          @blur="saveEdit(todo)"
+          @keyup.enter="saveEdit(todo)"
+          @keyup.esc="cancelEdit"
+          ref="editInput"
+        />
         <button
           @click="remove(todo)"
           class="text-red-600 hover:text-red-800"
