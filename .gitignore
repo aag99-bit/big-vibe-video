@@ -2,7 +2,8 @@ node_modules/
 dist/
 index.legacy*
 .mcp.json
-.pi/
+.pi/*
+!.pi/skills/
 project.tar.gz
 # SQLite local data
 apps/backend/data/

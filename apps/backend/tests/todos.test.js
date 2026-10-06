@@ -67,7 +67,7 @@ describe('Todos API', () => {
     const res = await request(API_URL)
       .patch(`/api/todos/${todoId}`)
       .set('Authorization', `Bearer ${token1}`)
-          .send({ done: true })
+      .send({ done: true })
     
     expect(res.status).toBe(200);
     expect(res.body.done).toBe(true);
