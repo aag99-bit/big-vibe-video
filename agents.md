@@ -52,7 +52,20 @@ Execute the script from the root of the project:
 
 ---
 
+## 🧪 Testing
+
+The project uses **Jest + Supertest** for API testing (E2E-style tests against the running backend).
+
+- **Documentation:** See [docs/testing.md](docs/testing.md) for complete instructions
+- **Run tests:** `cd apps/backend && npm test`
+- **Principle:** Tests run against local backend (localhost:3001), NOT production
+- **Structure:** Tests are in `apps/backend/tests/*.test.js`
+
+---
+
 ## 🤖 AI Behavior Rules (Скиллы)
+
+> **Полная документация скиллов находится в `.pi/skills/`.** Ниже — краткие правила-напоминалки. При активации скилла всегда читай полный SKILL.md из папки скилла.
 
 ### Skill 1: task-creator
 
@@ -71,6 +84,15 @@ Execute the script from the root of the project:
 
 - Backend (`apps/backend/...`): [что изменить]
 - Frontend (`apps/frontend/...`): [что изменить]
+
+
+**4.1 Технические решения (приняты автоматически):**
+- Безопасность: bcrypt, JWT, валидация
+- Валидация: .trim(), regex для email
+- Обработка ошибок: try/catch, корректные HTTP-статусы
+- UX: лоадеры, глазик для пароля, сообщения об успехе/ошибке
+
+> Полный шаблон ТЗ (9 секций): `.pi/skills/task-creator/references/task-template.md`
 
 **План действий:**
 
@@ -102,9 +124,9 @@ Execute the script from the root of the project:
 - Используй понятные сообщения коммитов на английском (feat:, fix:, refactor:).
 - НЕ коммить автоматически — спрашивай разрешение.
 
-### Skill 2: task-solver
+### Skill 5: task-solver
 
-**Структура скилла:** `.pi/skills/task-solver/SKILL.md`
+**Полная документация:** `.pi/skills/task-solver/SKILL.md` — читай этот файл при активации.
 
 Когда пользователь пишет "Выполни задачу NN" или "Реализуй tasks/NN-...md":
 
