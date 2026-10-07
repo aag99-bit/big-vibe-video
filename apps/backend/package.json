@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "jest"
+    "test": "jest",
+    "clean": "node scripts/clean-test-users.js",
+    "test:clean": "node scripts/clean-test-users.js && jest"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
