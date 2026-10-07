@@ -8,6 +8,16 @@
           </div>
           <div class="flex items-center space-x-4">
             <span class="text-sm text-gray-600">{{ authStore.user?.email }}</span>
+            
+            <!-- Кнопка Админ-панель (видна только админам) -->
+            <router-link 
+              v-if="authStore.isAdmin" 
+              to="/admin" 
+              class="text-sm bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700"
+            >
+              ⚙️ Админ-панель
+            </router-link>
+            
             <router-link to="/profile" class="text-sm text-blue-600 hover:text-blue-800">Профиль</router-link>
             <button
               @click="handleLogout"

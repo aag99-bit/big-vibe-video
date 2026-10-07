@@ -9,6 +9,9 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref(null)
 
   const isAuthenticated = computed(() => !!token.value)
+  
+  // ✅ ДОБАВЛЕНО: Вычисляемое свойство для проверки прав админа
+  const isAdmin = computed(() => user.value?.is_admin === true)
 
   async function login(email, password) {
     loading.value = true
@@ -17,14 +20,15 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authAPI.login(email, password)
       token.value = response.token
-      user.value = response.user
+      user.value = response.user // Бэкенд теперь отдаёт { id, email, is_admin }
       
       localStorage.setItem('token', response.token)
       localStorage.setItem('user', JSON.stringify(response.user))
-      
+      localStorage.setItem('isAdmin', response.user.is_admin ? '1' : '0') 
+
       return true
     } catch (err) {
-      error.value = err.message
+      error.value = err.response?.data?.error || err.message || 'Ошибка входа'
       return false
     } finally {
       loading.value = false
@@ -40,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
       // После успешной регистрации сразу логинимся
       return await login(email, password)
     } catch (err) {
-      error.value = err.message
+      error.value = err.response?.data?.error || err.message || 'Ошибка регистрации'
       return false
     } finally {
       loading.value = false
@@ -51,6 +55,9 @@ export const useAuthStore = defineStore('auth', () => {
     authAPI.logout()
     token.value = null
     user.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user') // ✅ ДОБАВЛЕНО: явная очистка хранилища
+    localStorage.removeItem('isAdmin') 
   }
 
   return {
@@ -59,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     isAuthenticated,
+    isAdmin,       // ✅ ДОБАВЛЕНО: экспортируем для использования в компонентах и роутере
     login,
     register,
     logout
