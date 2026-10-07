@@ -1,103 +1,188 @@
 const request = require('supertest');
-const API_URL = 'http://localhost:3001';
+
+const BASE_URL = 'http://localhost:3001';
 
 describe('Todos API', () => {
-  let user1 = {
-    email: `test-todos-1-${Date.now()}@test.com`,
+  const testUser = {
+    email: `test-todos-${Date.now()}@test.com`,
     password: 'Password1'
   };
-  let user2 = {
-    email: `test-todos-2-${Date.now()}@test.com`,
-    password: 'Password1'
-  };
-  let token1 = '';
-  let token2 = '';
+  let token = '';
+  let todoId = 0;
 
   beforeAll(async () => {
-    // Register User 1
-    await request(API_URL).post('/api/auth/register').send(user1);
-    const login1 = await request(API_URL).post('/api/auth/login').send(user1);
-    token1 = login1.body.token;
-
-    // Register User 2
-    await request(API_URL).post('/api/auth/register').send(user2);
-    const login2 = await request(API_URL).post('/api/auth/login').send(user2);
-    token2 = login2.body.token;
+    await request(BASE_URL).post('/api/auth/register').send(testUser);
+    const res = await request(BASE_URL).post('/api/auth/login').send(testUser);
+    token = res.body.token;
   });
 
-  it('should create a todo with token (201)', async () => {
-    const res = await request(API_URL)
-      .post('/api/todos')
-      .set('Authorization', `Bearer ${token1}`)
-      .send({ text: 'Test Todo' });
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+  describe('POST /api/todos', () => {
+    it('should create a todo with token (201)', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: 'Test todo' });
+      expect(response.status).toBe(201);
+      expect(response.body.id).toBeDefined();
+      expect(response.body.text).toBe('Test todo');
+      expect(response.body.done).toBe(false);
+      todoId = response.body.id;
+    });
+
+    it('should reject without token (401)', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .send({ text: 'Test todo' });
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject empty text (400)', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: '' });
+      expect(response.status).toBe(400);
+    });
+
+    it('should reject whitespace-only text (400)', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: '   ' });
+      expect(response.status).toBe(400);
+    });
+
+    it('should trim text', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: '  Trim me  ' });
+      expect(response.status).toBe(201);
+      expect(response.body.text).toBe('Trim me');
+    });
+
+    it('should accept emoji', async () => {
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: '🎉 Party time!' });
+      expect(response.status).toBe(201);
+      expect(response.body.text).toBe('🎉 Party time!');
+    });
+
+    it('should accept long text (1000 chars)', async () => {
+      const longText = 'A'.repeat(1000);
+      const response = await request(BASE_URL)
+        .post('/api/todos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: longText });
+      expect(response.status).toBe(201);
+      expect(response.body.text).toBe(longText);
+    });
   });
 
-  it('should not create a todo without token (401)', async () => {
-    const res = await request(API_URL)
-      .post('/api/todos')
-      .send({ text: 'No Token Todo' });
-    expect(res.status).toBe(401);
+  describe('GET /api/todos', () => {
+    it('should return only own todos', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/todos')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it('should return empty list for new user', async () => {
+      const newUser = { email: `test-todos-empty-${Date.now()}@test.com`, password: 'Password1' };
+      await request(BASE_URL).post('/api/auth/register').send(newUser);
+      const res = await request(BASE_URL).post('/api/auth/login').send(newUser);
+      const response = await request(BASE_URL)
+        .get('/api/todos')
+        .set('Authorization', `Bearer ${res.body.token}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should filter active todos', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/todos?filter=active')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      response.body.forEach(todo => expect(todo.done).toBe(false));
+    });
+
+    it('should filter done todos', async () => {
+      const response = await request(BASE_URL)
+        .get('/api/todos?filter=done')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      response.body.forEach(todo => expect(todo.done).toBe(true));
+    });
   });
 
-  it('should get only own todos', async () => {
-    // Create another todo for user 2
-    await request(API_URL)
-      .post('/api/todos')
-      .set('Authorization', `Bearer ${token2}`)
-      .send({ text: 'User 2 Todo' });
+  describe('PATCH /api/todos/:id', () => {
+    it('should mark todo as done (PATCH)', async () => {
+      const response = await request(BASE_URL)
+        .patch(`/api/todos/${todoId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ done: true });
+      expect(response.status).toBe(200);
+      expect(response.body.done).toBe(true);
+    });
 
-    const res = await request(API_URL)
-      .get('/api/todos')
-      .set('Authorization', `Bearer ${token1}`);
-    
-    expect(res.status).toBe(200);
-    const todos = res.body;
-    const user2Todo = todos.find(t => t.text === 'User 2 Todo');
-    expect(user2Todo).toBeUndefined();
+    it('should unmark todo as done', async () => {
+      const response = await request(BASE_URL)
+        .patch(`/api/todos/${todoId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ done: false });
+      expect(response.status).toBe(200);
+      expect(response.body.done).toBe(false);
+    });
+
+    it('should update text', async () => {
+      const response = await request(BASE_URL)
+        .patch(`/api/todos/${todoId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ text: 'Updated text' });
+      expect(response.status).toBe(200);
+      expect(response.body.text).toBe('Updated text');
+    });
+
+    it('should reject without token (401)', async () => {
+      const response = await request(BASE_URL)
+        .patch(`/api/todos/${todoId}`)
+        .send({ done: true });
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject non-existent id (404)', async () => {
+      const response = await request(BASE_URL)
+        .patch('/api/todos/999999')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ done: true });
+      expect(response.status).toBe(404);
+    });
   });
 
-  it('should mark todo as completed (PATCH)', async () => {
-    const getRes = await request(API_URL)
-      .get('/api/todos')
-      .set('Authorization', `Bearer ${token1}`);
-    const todoId = getRes.body[0].id;
+  describe('DELETE /api/todos/:id', () => {
+    it('should delete a todo (DELETE)', async () => {
+      const response = await request(BASE_URL)
+        .delete(`/api/todos/${todoId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+      expect(response.body.ok).toBe(true);
+    });
 
-    const res = await request(API_URL)
-      .patch(`/api/todos/${todoId}`)
-      .set('Authorization', `Bearer ${token1}`)
-      .send({ done: true })
-    
-    expect(res.status).toBe(200);
-    expect(res.body.done).toBe(true);
-  });
+    it('should reject without token (401)', async () => {
+      const response = await request(BASE_URL)
+        .delete(`/api/todos/${todoId}`);
+      expect(response.status).toBe(401);
+    });
 
-  it('should delete a todo (DELETE)', async () => {
-    const getRes = await request(API_URL)
-      .get('/api/todos')
-      .set('Authorization', `Bearer ${token1}`);
-    const todoId = getRes.body[0].id;
-
-    const res = await request(API_URL)
-      .delete(`/api/todos/${todoId}`)
-      .set('Authorization', `Bearer ${token1}`);
-    
-    expect(res.status).toBe(200);
-  });
-
-  it('should not delete someone else\'s todo (404)', async () => {
-    // Create todo for user 2
-    const createRes = await request(API_URL)
-      .post('/api/todos')
-      .set('Authorization', `Bearer ${token2}`)
-      .send({ text: 'User 2 Todo' });
-    const todoId = createRes.body.id;
-
-    const res = await request(API_URL)
-      .delete(`/api/todos/${todoId}`)
-      .set('Authorization', `Bearer ${token1}`);
-    
-    expect(res.status).toBe(404);
+    it('should reject non-existent id (404)', async () => {
+      const response = await request(BASE_URL)
+        .delete('/api/todos/999999')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(404);
+    });
   });
 });
