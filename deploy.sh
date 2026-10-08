@@ -1,10 +1,13 @@
 #!/bin/bash
 set -e
 
-SERVER="root@109.238.92.111"
+SERVER="root@195.208.60.170"
 REMOTE_DIR="/app/big-vibe-video"
 
-echo "📦 Собираю архив с исходниками (новая структура apps/)..."
+echo "💾 Создаю бэкап БД на сервере перед деплоем..."
+ssh $SERVER "/opt/backups/scripts/backup-db.sh || echo '⚠️ Бэкап не настроен, продолжаем...'"
+
+echo "📦 Собираю архив с исходниками..."
 tar -czf project.tar.gz apps/ Dockerfile docker-compose.yml nginx.conf entrypoint.sh .dockerignore
 
 echo "🚀 Загружаю на сервер..."
