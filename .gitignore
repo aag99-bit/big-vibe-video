@@ -12,4 +12,5 @@ apps/backend/data/
 *.db-wal
 *.db-shm
 # Frontend build output
-apps/frontend/dist/
+apps/frontend/dist/frontend.log
+*.log
